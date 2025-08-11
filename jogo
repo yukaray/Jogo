@@ -1,0 +1,651 @@
+ const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+  let botao,Xantg,Yantg,dist,l,h,x,y,letra,letras,indice,musicaescolhida,albumescolhido,cooldown=true,numAlbum = 0;
+
+  let Tbatida = 0;
+  let isbatida = 0;
+
+  let mouse = false;
+  let keyevent = false
+
+  document.body.style.display = "flex";
+  document.body.style.flexFlow = "row wrap"
+  document.body.style.justifyContent = "center";
+  document.body.style.alignItems = "center";
+  document.body.style.height = "100dvh";
+  document.body.style.width = '100dvw'
+  document.body.style.position = "relative";
+  document.body.style.gap = '2rem';
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+
+class Musica {
+  constructor(nomemsc, nomectr, src, maxPerfeitos, maxPontos, rangeBatida, dificuldade, predefinido, album) {
+    this.nomemsc = nomemsc;
+    this.nomectr = nomectr;
+    this.src = src;
+    this.maxPerfeitos = maxPerfeitos;
+    this.maxPontos = maxPontos;
+    this.rangebatida = rangeBatida;
+    this.dificuldade = dificuldade;
+    this.predefinido = predefinido;
+    this.album = album;
+  }
+}
+
+const musicas = {};
+
+fetch('resultado.json')
+  .then(res => res.json())
+  .then(data => {
+    for (const [nome, info] of Object.entries(data)) {
+      musicas[nome] = new Musica(
+        nome,
+        "",
+        info.src,
+        info.batidas.length,
+        Math.round(info.bpm * 10),
+        0.2,
+        "médio",
+        true,
+        info.album
+      );
+    }
+    console.log(musicas);
+  });
+
+  function iscomputador() {
+    const computador = /Mobi|Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const telapc = window.innerWidth >= 1024;
+
+    if(!computador || telapc){
+      
+      return true;
+
+    }
+
+    return false;
+
+  }
+
+  let pontos = {
+    
+    total: 0,
+    perfeitos: 0,
+    bons: 0,
+    melhoraveis: 0,
+    ruins: 0,
+    erros: 0
+    
+  };
+
+  function play(){
+    document.body.appendChild(document.createElement("button"));
+    
+    const botaostart = document.getElementsByTagName('button')[0];
+    
+    function start(h,l) {
+      
+      botaostart.setAttribute("class",'start');
+      
+      document.body.style.display = "flex";
+      document.body.style.justifyContent = "center";
+      document.body.style.alignItems = "center";
+      document.body.style.height = "100vh";
+      document.body.style.position = "relative";
+      
+      botaostart.textContent = 'Start';
+      botaostart.style.minWidth = l *rem;
+      botaostart.style.minHeight = h *rem;
+      botaostart.style.background = 'blue';
+      botaostart.style.color = 'red';
+      //botaostart.style.clipPath = 'path("M 20 0 Q 10 100 20 10 Q 65 95 100 60 Q 65 25 20 10 Z")';
+          
+    }
+    
+    function criarBotao(hParam,lParam){
+    
+        document.body.appendChild(document.createElement("button"));
+        
+        h = hParam * rem;
+        l = lParam * rem;
+        
+        x = Math.random() *(window.innerHeight - h);
+        y = Math.random() *(window.innerWidth - l);
+        
+        botao = document.getElementsByTagName('button')[0];
+        
+        botao.style.background = 'red';
+        botao.style.borderRadius = '2rem'
+        botao.style.width = `${l}px`;
+        botao.style.height = `${h}px`;
+        botao.style.position = 'absolute';
+        botao.style.top = `${x}px`;
+        botao.style.left = `${y}px`;
+    
+    }
+    
+    function totalpontos (sincronia){
+        
+      if(sincronia <= 50){
+          
+        pontos.total += 1000;
+        pontos.perfeitos++;
+          
+      }else if(sincronia <= 100){
+          
+        pontos.total += 800;
+        pontos.bons++;
+          
+      }else if(sincronia <= 150){
+          
+        pontos.total += 600;
+        pontos.melhoraveis++;
+          
+      }else{
+          
+        pontos.total += 200;
+        pontos.ruins++;
+          
+      }
+        
+    }
+      
+    const pc = iscomputador();
+    
+    if(pc){
+    
+      function jogopc(){
+    
+        botao.addEventListener('mouseenter',() => {
+    
+          return mouse = true;
+    
+        });
+    
+        botao.addEventListener('mouseleave',() => {
+    
+          return mouse = false;
+    
+        });
+    
+              
+        letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        indice = Math.floor(Math.random()*letras.length);
+        letra = letras[indice];
+    
+        botao.textContent = `${letra}`;
+    
+    
+      }
+    
+      document.addEventListener("keydown",(teclas) => {
+
+        if(!keyevent)
+          return;
+    
+        keyevent = false;
+    
+        var Tclick = performance.now();      
+    
+        var diferenca = Math.abs(Tclick-Tbatida);
+              
+        if(mouse && teclas.key.toUpperCase() === `${letra}`)
+          totalpontos(diferenca);
+    
+        keyevent = false;
+          
+      });     
+      
+      start(5,5)
+      botaostart.addEventListener("click",() => comecar(5,5))
+      
+    /*}else{
+      
+      function jogo() {
+        
+        botao.addEventListener('click',(click) => {
+          
+          const TamPosbotao = botao.getBoundingClientRect();
+          
+          const clickcerto = click.clientX >= TamPosbotao.left && click.clientX <= TamPosbotao.right && click.clientY >= TamPosbotao.bottom && click.clientY <= TamPosbotao.top;
+          
+          var Tclick = performance.now();
+          
+          var diferenca = Math.abs(Tclick-Tbatida);
+          
+          if(clickcerto){
+            
+            pontos(diferenca);
+            
+          }
+          
+          document.body.removeChild(botao);
+          
+          Xantg = x;
+          Yantg = y;
+          dist=0;
+    
+          do{
+    
+            x = Math.random() *(window.innerHeight - h);
+            y = Math.random() *(window.innerWidth - l)     
+            dist = Math.hypot(x-Xantg,y-Yantg);
+    
+          }while(dist<20);
+          
+          botao.style.top = `${x}px`;
+          botao.style.left = `${y}px`;
+          
+          
+          
+        });
+        
+      }
+      
+      start(3,3);
+      botaostart.addEventListener("click",comecar);
+      
+      
+    }*/
+
+    function mudarposicao(){
+  
+      Xantg = x;
+      Yantg = y;
+      dist = 0;
+
+      do{
+    
+          x = Math.random() *(window.innerHeight - h); 
+          y = Math.random() *(window.innerWidth - l);
+              
+          dist = Math.hypot(x-Xantg,y-Yantg);
+                  
+        }while(dist<20);
+                
+        botao.style.top = `${x}px`;
+        botao.style.left = `${y}px`;
+                      
+        indice = Math.floor(Math.random()*letras.length);
+        letra = letras[indice]
+              
+        botao.textContent = `${letra}`
+
+    }
+    
+    async function comecar(hParam,lParam){
+        
+
+      document.body.removeChild(botaostart);
+    
+      criarBotao(hParam,lParam);
+      document.body.appendChild(document.createElement("audio"));
+    
+      const audio = document.getElementsByTagName("audio")[0];
+      
+      const mscObj = musicas[musicaescolhida];
+    
+      audio.setAttribute("src",mscObj.src);
+      audio.setAttribute("crossOrigin","anonymos");
+    
+      var context = new AudioContext;
+    
+      var source = context.createMediaElementSource(audio);
+    
+      var analise = context.createAnalyser();
+    
+      analise.fftSize = 256;
+    
+      var tamfrequencia = analise.frequencyBinCount;
+    
+      var frequencia = new Uint8Array(tamfrequencia);
+    
+      source.connect(analise);
+    
+      analise.connect(context.destination);
+    
+      audio.play();
+      
+      if(pc)
+        jogopc();
+      /*else
+        jogo()*/
+      
+
+      isbatida = 0; 
+
+      function batidas () {
+        
+        requestAnimationFrame(batidas);
+        
+        analise.getByteFrequencyData(frequencia);
+    
+        isbatida = 0;
+        
+        for(let i=0;i<10;i++) {
+          
+          isbatida += frequencia[i];
+          
+        }
+        
+        if(isbatida>2200 ){
+    
+          Tbatida = performance.now();
+          keyevent = true;
+          mudarposicao();
+    
+        }
+      }
+        
+        batidas();
+        
+    }
+    
+  }}
+
+  function estilizacao (nome) {
+    return nome.replaceAll("-"," ").split(' ').map(palavra => palavra.charAt(0).toUpperCase()+palavra.slice(1)).join(" ");
+  }
+
+  function normalizarETratar(texto){
+    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")     .toLowerCase();
+  }
+
+  function escolhermusica(posicao,remover){
+    
+    let Albumescolhido,Tanim=5000;
+    
+    
+    for(const [Nmusica,Clmusica] of Object.entries(musicas)){
+      
+      if (normalizarETratar(Clmusica.album) === albumescolhido){
+        
+        const nomeECd = document.createElement('div');
+        
+        nomeECd.style.display = 'flex';
+        nomeECd.style.flexDirection = 'column'
+        nomeECd.style.alignItems = 'center'
+        
+        const divmusicas = document.createElement('div');
+        const nome = document.createElement('p');
+        
+        nomeECd.classList.add(normalizarETratar(Clmusica.album));
+        
+        divmusicas.dataset.nome =
+          normalizarETratar(Clmusica.nomemsc);
+        
+        divmusicas.style.backgroundImage = `url('/ImgAlbum/${normalizarETratar(Clmusica.album)}.png')`;
+        
+        divmusicas.style.backgroundSize = "cover";
+        
+      divmusicas.style.backgroundPosition = "center";
+        
+        divmusicas.style.width = '8rem';
+        divmusicas.style.height = '8rem';
+        
+        nome.textContent = `${estilizacao(Clmusica.nomemsc)}`
+        //nome.style.marginTop = 'none'
+        
+        nomeECd.appendChild(divmusicas);
+        nomeECd.appendChild(nome);
+        
+        document.body.appendChild(nomeECd);
+        
+        Albumescolhido=Clmusica.album;
+          
+      }
+    }
+    
+    const musicasDoAlbum = Array.from(document.getElementsByClassName(`${normalizarETratar(Albumescolhido)}`))
+    
+    const estanteDisco = document.createElement("div");
+    
+    for (let musicas of musicasDoAlbum) {
+      
+      estanteDisco.appendChild(musicas);
+      
+    }
+    
+    document.body.appendChild(estanteDisco)
+    
+    estanteDisco.style.display = 'grid';
+    estanteDisco.style.gridTemplateColumns = 'repeat(7,1fr)'
+    estanteDisco.style.gap = '1.5rem'
+    estanteDisco.style.position = 'absolute'
+    estanteDisco.style.top = `${posicao.y}`
+    estanteDisco.style.left = `${posicao.x}`
+    
+    estanteDisco.addEventListener("click",(clicado) => {
+      
+      const musicaclicada = clicado.target.closest(`.${Albumescolhido}`)
+      
+      let divdataset,animacao;
+      
+      if(!cooldown)
+        return;
+      
+      if (musicaclicada) {
+        
+        divdataset = musicaclicada.querySelector("[data-nome]")
+        
+      }
+      
+      if (divdataset && cooldown) {
+        
+        cooldown = false;
+        
+        musicaescolhida = divdataset.dataset.nome;
+        
+        animacao = estanteDisco.animate([
+          {opacity:'1'},
+        {opacity: '0'}],{
+          
+          duration: Tanim,
+          easing: 'linear'
+          
+        });
+        
+        animacao = remover.animate([
+          {opacity:'1'},
+        {opacity: '0'}],{
+          
+          duration: Tanim,
+          easing: 'linear'
+          
+        });
+        
+        animacao.finished.then(() =>{
+          
+          estanteDisco.remove()
+          remover.remove()
+          cooldown=true
+          play();
+          
+        })
+        
+        console.log(musicaescolhida)
+        
+      }
+    })
+    
+  }
+
+  function criarDivAlbum(nomeClasseExtra) {
+    const div = document.createElement("div");
+    div.classList.add("album");
+    div.dataset.nome = normalizarETratar(nomeClasseExtra);
+    return div;
+  }
+
+  const divEuMesmo = criarDivAlbum("eu-mesmo");
+  const divPatriota = criarDivAlbum("patriota");
+
+  document.body.appendChild(divEuMesmo);
+  document.body.appendChild(divPatriota);
+
+  const albuns =document.getElementsByClassName("album")
+
+  divEuMesmo.style.backgroundImage = "url('/albuns/eu-mesmo.png')";
+  divPatriota.style.backgroundImage = "url('/albuns/patriota.png')";
+
+  for (const i of Array.from(albuns)) {
+    i.style.backgroundSize = "cover";
+    i.style.backgroundPosition = "center"
+    i.style.width = '8rem';
+    i.style.height = '8rem';
+    i.animate([
+      {transform: 'rotate(0deg)',}
+      ,{transform: 'rotate(360deg)'
+      }],{
+      
+      duration: 4000,
+      iterations: Infinity,
+      easing: 'linear'
+      
+    });
+    
+    numAlbum++;
+  }
+
+
+  function animselecao(album,posicao){
+    
+    album.style.position = 'absolute';
+    album.style.top = `${posicao.y}px`
+    album.style.left = `${posicao.x}px`
+    
+    const bodyF = document.createElement('div');
+    
+    document.body.appendChild(bodyF);
+    
+    bodyF.style.background = album.style.backgroundImage;
+    bodyF.style.backgroundRepeat = "no-repeat"
+    bodyF.style.backgroundSize = "cover";
+    bodyF.style.backgroundPosition = "center"
+    bodyF.style.width = '8rem';
+    bodyF.style.height = '8rem';
+    bodyF.style.zIndex = '-1'
+    bodyF.style.position = 'fixed';
+    bodyF.style.top = `${posicao.y}px`
+    bodyF.style.left = `${posicao.x}px`
+    
+    let animacao;
+    
+    animacao = bodyF.animate([{
+      transform: 'scale(0.01) rotate(0deg)',
+      opacity: "0"},
+    {
+      transform: 'scale(10) rotate(1080deg)',
+      opacity: "1"
+      
+    }],{
+      
+      duration: 7000,
+      easing: 'linear',
+      fill: 'forwards'
+      
+    });
+    
+    animacao.finished.then(() => {
+      
+      bodyF.animate([{
+      transform: 'rotate(0deg)'},
+    {
+      transform: 'rotate(360deg)'
+      
+    }],{
+      
+      duration: 5000,
+      iterations: Infinity,
+      easing: 'linear',
+      composite: 'add'
+      
+    });
+    
+    escolhermusica(posicao,bodyF);
+      
+    } )
+    
+  }
+
+  document.addEventListener("click",(clicado)=>{
+    
+    let remover = Array.from(albuns);
+    
+    if (!clicado.target.closest(".album")) return;
+    
+    let albumclicado = clicado.target.closest(".album")
+    
+    
+    if (numAlbum>=2 && cooldown){
+      cooldown=false;
+      for (let rem of remover) {
+        
+        const divanim = document.createElement("div");
+        divanim.className = "anim";
+        document.body.appendChild(divanim);
+        divanim.appendChild(rem);
+        
+        const metadeW = window.innerWidth/2;
+        
+        const esquerdaouDireita = clicado.clientX < metadeW;
+        
+        let transicao = esquerdaouDireita? metadeW: -metadeW;
+        
+        transicao = Number(transicao) || 0;
+        
+        let animacao,Tanim=3000,naorem,posicao;
+          
+        if(rem !== albumclicado){
+          animacao = divanim.animate([
+            {transform:'translateX(0)',
+              opacity: "1"
+            },
+            {transform:`translateX(${transicao*2}px)`,
+              opacity:"0"
+            }],{
+              
+              duration: Tanim,
+              easing: 'linear',
+              
+            });
+            
+        }else{
+          animacao = divanim.animate([
+            {transform:'translateX(0)'
+            },
+            {transform:`translateX(${transicao/7.5}px)`
+            }],{
+              
+              duration: Tanim,
+              easing: 'linear',
+              
+            });
+            posicao=rem.getBoundingClientRect();
+            naorem=rem;
+            albumescolhido=rem.dataset.nome;
+        }
+        
+        animacao.finished.then(() =>{ 
+          
+          if (rem != clicado.target)
+            rem.remove();
+            
+          if(naorem && posicao)
+          animselecao(naorem,posicao);
+          
+  document.body.removeChild(divanim);
+            cooldown = true;
+            
+        });
+      }
+      
+      numAlbum--;
+      
+    }else{
+      
+      return;
+    }
+    
+  });
